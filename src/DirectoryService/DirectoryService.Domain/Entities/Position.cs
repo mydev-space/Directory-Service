@@ -25,7 +25,7 @@ public class Position
     }
 
     // Фабричный метод - единственный способ создать позицию
-    public static Position Create(Name name, Description description)
+    public static Position CreateNew(Name name, Description description)
     {
         return new Position(PositionId.New(), name, description, isActive: true, EntityLifeTime.CreatedNew());
     }
@@ -33,11 +33,7 @@ public class Position
     // Деактивация позиции
     public void Deactivate()
     {
-        if (!IsActive)
-        {
-            throw new InvalidOperationException("Уже неактивна");
-        }
-
+        EnsureIsActive();
         IsActive = false;
         EntityLifeTime = EntityLifeTime.Update();
     }
@@ -45,6 +41,7 @@ public class Position
     // Изменение описания позиции
     public void UpdateDescription(Description newDescription)
     {
+        EnsureIsActive();
         Description = newDescription;
         EntityLifeTime = EntityLifeTime.Update();
     }
@@ -52,7 +49,16 @@ public class Position
     // Переименование позиции
     public void Rename(Name newName)
     {
+        EnsureIsActive();
         Name = newName;
         EntityLifeTime = EntityLifeTime.Update();
+    }
+
+    private void EnsureIsActive()
+    {
+        if (!IsActive)
+        {
+            throw new InvalidOperationException("Нельзя изменить архивированную должность");
+        }
     }
 }
