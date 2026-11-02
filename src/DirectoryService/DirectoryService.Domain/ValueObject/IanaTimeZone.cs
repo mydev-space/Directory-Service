@@ -1,13 +1,11 @@
-using System.Text.RegularExpressions;
+using System;
 
 namespace DirectoryService.Domain.ValueObject;
 
 // Объект для часового пояса в формате IANA
-// Обязательно должен быть 1 разделитель "/"
-// Например: Россия/Москва
+// Например: Europe/London, Asia/Tokyo
 public record IanaTimeZone
 {
-    private static readonly Regex Pattern = new(@"^[А-Яа-яЁё]+/[А-Яа-яЁё]+$", RegexOptions.Compiled);
     public string Value { get; }
 
     private IanaTimeZone (string value)
@@ -19,16 +17,31 @@ public record IanaTimeZone
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("Часовой пояс не может быть пустым");
+            throw new ArgumentException("Часовой пояс не может быть пустым", nameof(value));
         }
 
         var formatted = value.Trim();
 
         // Проверка на соответствие шаблону Страна/Город
-        if (!Pattern.IsMatch(formatted))
+        if (!formatted.Contains('/'))
         {
-            throw new ArgumentException("Часовой пояс должен быть в формате Страна/Город");
+            throw new ArgumentException("Укажите часовой пояс в формате IANA, например Europe/London", nameof(value));
         }
-        return new IanaTimeZone (formatted);
+
+        TimeZoneInfo timeZoneInfo;
+
+        try
+        {
+            timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(formatted);
+        }
+        catch (TimeZoneNotFoundException ex)
+        {
+            throw new ArgumentException($"Часовой пояс {formatted} не найден", nameof(value), ex);
+        }
+        catch (InvalidTimeZoneException ex)
+        {
+            throw new ArgumentException($"Часовой пояс {formatted} имеет некорректные данные", nameof(value), ex);
+        }
+        return new IanaTimeZone (timeZoneInfo.Id);
     }
 }

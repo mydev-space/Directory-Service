@@ -1,3 +1,4 @@
+using System;
 using DirectoryService.Domain.Utilit;
 
 namespace DirectoryService.Domain.ValueObject;
@@ -22,11 +23,17 @@ public record DepartmentPath
 
     public static DepartmentPath CreateRoot(Identifier identifier)
     {
-        return new DepartmentPath(identifier.Value);
+        return Create(identifier.Value.Value);
     }
 
     public static DepartmentPath CreateChild(DepartmentPath parentPath, Identifier identifier)
     {
-        return new DepartmentPath(NotEmptyString.Create($"{parentPath.Value.Value}.{identifier.Value.Value}", maxLength));
+        return Create($"{parentPath.Value.Value}.{identifier.Value.Value}");
+    }
+    public bool IsAncestorOf(DepartmentPath other)
+    {
+        var currentPath = Value.Value;
+        var otherPath = other.Value.Value;
+        return otherPath.StartsWith(currentPath + ".", StringComparison.Ordinal);
     }
 }
